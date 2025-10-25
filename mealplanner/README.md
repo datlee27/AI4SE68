@@ -96,10 +96,8 @@ You can open `target/site/jacoco/index.html` in a browser to view the detailed c
 Coverage can be viewed in `target/site/jacoco/index.html` with following metrics:
 
 a) Overall Coverage Requirements:
-   - Line Coverage: Minimum 80%
-   - Branch Coverage: Minimum 75%
-   - Method Coverage: Minimum 85%
-
+    Coverage: Minimum 88%
+ 
 b) Core Features (Must have 100% coverage):
    - com.example.mealplanner.service.MealPlannerService
      * addMeal()
