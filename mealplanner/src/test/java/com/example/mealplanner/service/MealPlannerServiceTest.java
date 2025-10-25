@@ -798,4 +798,115 @@ class MealPlannerServiceTest {
         verify(foodRepository).findById(nonExistentFoodId);
         verify(mealRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Should track water intake for multiple dates")
+    void should_TrackWaterIntake_ForMultipleDates() {
+        // Given
+        Long userId = 1L;
+        LocalDate date1 = testDate;
+        LocalDate date2 = testDate.plusDays(1);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        mealPlannerService.trackWaterIntake(userId, 500.0, date1);
+        mealPlannerService.trackWaterIntake(userId, 750.0, date2);
+
+        // Then
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository, times(2)).save(userCaptor.capture());
+        
+        List<User> savedUsers = userCaptor.getAllValues();
+        Map<LocalDate, Double> waterIntake = savedUsers.get(1).getWaterIntake();
+        assertEquals(500.0, waterIntake.get(date1));
+        assertEquals(750.0, waterIntake.get(date2));
+    }
+
+    @Test
+    @DisplayName("Should update dietary preferences with all types")
+    void should_UpdateDietaryPreferences_WithAllTypes() {
+        // Given
+        Long userId = 1L;
+        Map<String, Object> preferences = new HashMap<>();
+        preferences.put("diet", "vegan");
+        preferences.put("allergies", Arrays.asList("nuts", "dairy"));
+        preferences.put("maxCalories", 2000);
+        preferences.put("minProtein", 50);
+        preferences.put("excludeIngredients", Arrays.asList("soy", "gluten"));
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        List<Food> suitableFoods = Arrays.asList(testFood1, testFood2);
+        when(nutritionService.findSuitableMeals(eq(testUser), eq(preferences)))
+            .thenReturn(suitableFoods);
+        
+        // When
+        List<Food> result = mealPlannerService.suggestMeals(userId, preferences);
+        
+        // Then
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(suitableFoods, result);
+        verify(nutritionService).findSuitableMeals(testUser, preferences);
+    }
+
+    @Test
+    @DisplayName("Should validate week number range for shopping list")
+    void should_ValidateWeekNumber_ForShoppingList() {
+        // Given
+        Long userId = 1L;
+        
+        // Test with week 0
+        assertThrows(InvalidInputException.class,
+            () -> mealPlannerService.generateShoppingList(userId, 0));
+        
+        // Test with week 53
+        assertThrows(InvalidInputException.class,
+            () -> mealPlannerService.generateShoppingList(userId, 53));
+        
+        // Test with valid week numbers
+        when(mealRepository.findByUserIdAndDateBetween(
+            eq(userId), any(LocalDate.class), any(LocalDate.class)))
+            .thenReturn(Collections.emptyList());
+            
+        assertDoesNotThrow(() -> {
+            mealPlannerService.generateShoppingList(userId, 1);
+            mealPlannerService.generateShoppingList(userId, 52);
+        });
+        
+        verify(mealRepository, times(2))
+            .findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class));
+    }
+
+    @Test
+    @DisplayName("Should generate meal name with edge cases")
+    void should_GenerateMealName_WithEdgeCases() {
+        // Given
+        Long userId = 1L;
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(foodRepository.findById(anyLong())).thenReturn(Optional.of(testFood1));
+        when(mealRepository.save(any(Meal.class))).thenAnswer(i -> i.getArgument(0));
+        
+        // Test empty food list
+        List<Long> emptyFoodIds = Collections.emptyList();
+        assertThrows(InvalidInputException.class,
+            () -> mealPlannerService.addMeal(userId, testDate, MealType.BREAKFAST, emptyFoodIds));
+        
+        // Test single food
+        List<Long> singleFoodId = Collections.singletonList(1L);
+        Meal singleFoodMeal = mealPlannerService.addMeal(userId, testDate, MealType.BREAKFAST, singleFoodId);
+        assertTrue(singleFoodMeal.getName().contains(testFood1.getName()));
+        
+        // Test exact three foods
+        List<Long> threeFoodIds = Arrays.asList(1L, 1L, 1L);
+        Meal threeFoodsMeal = mealPlannerService.addMeal(userId, testDate, MealType.LUNCH, threeFoodIds);
+        assertEquals(3, threeFoodsMeal.getFoods().size());
+        assertFalse(threeFoodsMeal.getName().contains("..."));
+        
+        // Test more than three foods
+        List<Long> manyFoodIds = Arrays.asList(1L, 1L, 1L, 1L);
+        Meal manyFoodsMeal = mealPlannerService.addMeal(userId, testDate, MealType.DINNER, manyFoodIds);
+        assertTrue(manyFoodsMeal.getName().contains("..."));
+        assertEquals(4, manyFoodsMeal.getFoods().size());
+    }
 }

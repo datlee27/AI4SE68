@@ -125,21 +125,6 @@ public class MealPlannerService {
         return goal;
     }
     
-    public void updateDietaryPreferences(Long userId, Map<String, String> preferences) {
-        ValidationUtil.validateNotNull(userId, "userId");
-        ValidationUtil.validateNotNull(preferences, "preferences");
-        
-        if (preferences.isEmpty()) {
-            throw new InvalidInputException("Preferences map cannot be empty");
-        }
-        
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(userId));
-        
-        preferences.forEach((type, value) -> user.addDietaryPreference(type, value));
-        userRepository.save(user);
-    }
-    
     public List<String> generateShoppingList(Long userId, int weekNumber) {
         ValidationUtil.validateNotNull(userId, "userId");
         ValidationUtil.validateMinValue(weekNumber, 1, "weekNumber");

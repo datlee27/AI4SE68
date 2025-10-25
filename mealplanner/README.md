@@ -27,8 +27,8 @@ mvn spring-boot:run
 mvn test
 
 # Run tests with coverage report
-mvn test jacoco:report
 
+mvn test jacoco:report
 # Run single test class
 mvn test -Dtest=MealPlannerServiceTest
 
