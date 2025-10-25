@@ -1,6 +1,6 @@
 # Meal Planner Application
 
-[Slide(https://www.canva.com/design/DAG2tadhBMk/JYUzGvMeSq4QStvYW1Q6GQ/edit?utm_content=DAG2tadhBMk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)]
+(Slide)[https://www.canva.com/design/DAG2tadhBMk/JYUzGvMeSq4QStvYW1Q6GQ/edit?utm_content=DAG2tadhBMk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton]
 
 ## Overview
 This is a Spring Boot application for meal planning that helps users manage their daily meals and nutrition.
