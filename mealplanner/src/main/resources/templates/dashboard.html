@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout :: head">
+    <title id="pageTitle">Dashboard</title>
+</head>
+<body>
+    <div id="content">
+        <h1 class="text-center mb-2">Welcome to Your Meal Planner</h1>
+        
+        <div class="dashboard">
+            <!-- Today's Meals -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Today's Meals</h2>
+                    <a th:href="@{/meals/add}" class="btn btn-primary">Add Meal</a>
+                </div>
+                <div class="card-content">
+                    <div th:if="${#lists.isEmpty(todaysMeals)}" class="text-center">
+                        <p>No meals planned for today</p>
+                    </div>
+                    <div th:each="meal : ${todaysMeals}" class="meal-item">
+                        <h3 th:text="${meal.mealType}">Breakfast</h3>
+                        <ul>
+                            <li th:each="food : ${meal.foods}" th:text="${food.name}">Food Item</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Nutrition Summary</h2>
+                </div>
+                <div class="card-content">
+                    <div class="nutrition-item">
+                        <span>Calories</span>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${(nutrition.calories / goals.calories * 100)} + '%'"></div>
+                        </div>
+                        <span th:text="${nutrition.calories + ' / ' + goals.calories}">0/2000</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>Protein</span>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${(nutrition.protein / goals.protein * 100)} + '%'"></div>
+                        </div>
+                        <span th:text="${nutrition.protein + 'g / ' + goals.protein + 'g'}">0/150g</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>Carbs</span>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${(nutrition.carbs / goals.carbs * 100)} + '%'"></div>
+                        </div>
+                        <span th:text="${nutrition.carbs + 'g / ' + goals.carbs + 'g'}">0/250g</span>
+                    </div>
+                    <div class="nutrition-item">
+                        <span>Fats</span>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${(nutrition.fats / goals.fats * 100)} + '%'"></div>
+                        </div>
+                        <span th:text="${nutrition.fats + 'g / ' + goals.fats + 'g'}">0/65g</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Water Intake -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Water Intake</h2>
+                    <button class="btn btn-primary" onclick="trackWater()">Add Water</button>
+                </div>
+                <div class="card-content">
+                    <div class="water-progress">
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${(waterIntake / 2000 * 100)} + '%'"></div>
+                        </div>
+                        <span th:text="${waterIntake + 'ml / 2000ml'}">0ml/2000ml</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shopping List Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Shopping List</h2>
+                    <a th:href="@{/shopping-list}" class="btn btn-primary">View All</a>
+                </div>
+                <div class="card-content">
+                    <ul class="shopping-list">
+                        <li th:each="item : ${shoppingList}" th:text="${item}">Shopping Item</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Water Intake Modal -->
+    <div id="waterModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Track Water Intake</h2>
+            <form th:action="@{/water/track}" method="post">
+                <div class="form-group">
+                    <label class="form-label" for="amount">Amount (ml)</label>
+                    <input type="number" id="amount" name="amount" class="form-input" min="0" step="50" value="250">
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function trackWater() {
+            document.getElementById('waterModal').style.display = 'block';
+        }
+
+        // Close modal when clicking outside or on close button
+        document.querySelector('.modal-close').addEventListener('click', function() {
+            document.getElementById('waterModal').style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target == document.getElementById('waterModal')) {
+                document.getElementById('waterModal').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

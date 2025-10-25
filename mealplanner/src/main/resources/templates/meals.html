@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="layout :: head">
+    <title id="pageTitle">Meals</title>
+</head>
+<body>
+    <div id="content">
+        <div class="meals-header">
+            <h1>Meal Planner</h1>
+            <button class="btn btn-primary" onclick="showAddMealModal()">Add New Meal</button>
+        </div>
+
+        <!-- Calendar View -->
+        <div class="calendar-container card">
+            <div class="calendar-header">
+                <button class="btn" th:onclick="'changeWeek(-1)'">Previous Week</button>
+                <h2 th:text="${weekStart + ' - ' + weekEnd}">Week Range</h2>
+                <button class="btn" th:onclick="'changeWeek(1)'">Next Week</button>
+            </div>
+            
+            <div class="meal-calendar">
+                <div th:each="day : ${weekDays}" class="day-column">
+                    <div class="day-header">
+                        <span th:text="${day.dayOfWeek}">Monday</span>
+                        <span th:text="${day.date}">Oct 24</span>
+                    </div>
+                    
+                    <div th:each="mealType : ${mealTypes}" class="meal-slot">
+                        <div th:if="${meals[day.date + '-' + mealType]}" class="meal-item">
+                            <h4 th:text="${meals[day.date + '-' + mealType].name}">Meal Name</h4>
+                            <ul>
+                                <li th:each="food : ${meals[day.date + '-' + mealType].foods}" 
+                                    th:text="${food.name}">Food Item</li>
+                            </ul>
+                            <div class="meal-actions">
+                                <button class="btn" th:onclick="'editMeal(' + ${meals[day.date + '-' + mealType].id} + ')'">Edit</button>
+                                <button class="btn" th:onclick="'deleteMeal(' + ${meals[day.date + '-' + mealType].id} + ')'">Delete</button>
+                            </div>
+                        </div>
+                        <div th:unless="${meals[day.date + '-' + mealType]}" class="empty-slot">
+                            <button class="btn" th:onclick="'showAddMealModal(\'' + ${day.date} + '\', \'' + ${mealType} + '\')'">
+                                + Add Meal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Meal Modal -->
+        <div id="mealModal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2 id="modalTitle">Add New Meal</h2>
+                <form id="mealForm" th:action="@{/meals/save}" method="post">
+                    <input type="hidden" id="mealId" name="id">
+                    <div class="form-group">
+                        <label class="form-label" for="date">Date</label>
+                        <input type="date" id="date" name="date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="mealType">Meal Type</label>
+                        <select id="mealType" name="mealType" class="form-input" required>
+                            <option value="BREAKFAST">Breakfast</option>
+                            <option value="LUNCH">Lunch</option>
+                            <option value="DINNER">Dinner</option>
+                            <option value="SNACK">Snack</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Foods</label>
+                        <div id="foodsList">
+                            <div class="food-item">
+                                <select name="foods" class="form-input" required>
+                                    <option value="">Select a food</option>
+                                    <option th:each="food : ${availableFoods}" 
+                                            th:value="${food.id}" 
+                                            th:text="${food.name}">Food Name</option>
+                                </select>
+                                <button type="button" class="btn" onclick="removeFood(this)">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn" onclick="addFoodField()">Add Another Food</button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Meal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAddMealModal(date, mealType) {
+            const modal = document.getElementById('mealModal');
+            const form = document.getElementById('mealForm');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = 'Add New Meal';
+            form.reset();
+            
+            if (date) document.getElementById('date').value = date;
+            if (mealType) document.getElementById('mealType').value = mealType;
+            
+            modal.style.display = 'block';
+        }
+
+        function editMeal(mealId) {
+            const modal = document.getElementById('mealModal');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = 'Edit Meal';
+            
+            // Fetch meal data and populate form
+            fetch(`/meals/${mealId}`)
+                .then(response => response.json())
+                .then(meal => {
+                    document.getElementById('mealId').value = meal.id;
+                    document.getElementById('date').value = meal.date;
+                    document.getElementById('mealType').value = meal.mealType;
+                    
+                    // Clear and populate foods
+                    const foodsList = document.getElementById('foodsList');
+                    foodsList.innerHTML = '';
+                    meal.foods.forEach(food => {
+                        addFoodField(food.id);
+                    });
+                });
+            
+            modal.style.display = 'block';
+        }
+
+        function addFoodField(selectedFoodId) {
+            const foodsList = document.getElementById('foodsList');
+            const foodItem = document.createElement('div');
+            foodItem.className = 'food-item';
+            
+            const select = document.querySelector('select[name="foods"]').cloneNode(true);
+            if (selectedFoodId) select.value = selectedFoodId;
+            
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn';
+            removeButton.onclick = function() { removeFood(this); };
+            removeButton.textContent = 'Remove';
+            
+            foodItem.appendChild(select);
+            foodItem.appendChild(removeButton);
+            foodsList.appendChild(foodItem);
+        }
+
+        function removeFood(button) {
+            const foodsList = document.getElementById('foodsList');
+            if (foodsList.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        function deleteMeal(mealId) {
+            if (confirm('Are you sure you want to delete this meal?')) {
+                fetch(`/meals/${mealId}`, { method: 'DELETE' })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        }
+                    });
+            }
+        }
+
+        function changeWeek(offset) {
+            const params = new URLSearchParams(window.location.search);
+            const currentWeek = parseInt(params.get('week')) || 0;
+            const newWeek = currentWeek + offset;
+            
+            window.location.href = `/meals?week=${newWeek}`;
+        }
+
+        // Modal close handlers
+        document.querySelector('.modal-close').addEventListener('click', function() {
+            document.getElementById('mealModal').style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('mealModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

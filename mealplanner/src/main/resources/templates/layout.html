@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Planner - <th:block th:include=":: #pageTitle">Title</th:block></title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <header class="header">
+        <nav class="container navbar">
+            <div class="logo">Meal Planner</div>
+            <div class="nav-links">
+                <a th:href="@{/}" th:classappend="${#httpServletRequest.requestURI == '/' ? 'active' : ''}">Dashboard</a>
+                <a th:href="@{/meals}" th:classappend="${#httpServletRequest.requestURI.startsWith('/meals') ? 'active' : ''}">Meals</a>
+                <a th:href="@{/nutrition}" th:classappend="${#httpServletRequest.requestURI.startsWith('/nutrition') ? 'active' : ''}">Nutrition</a>
+                <a th:href="@{/shopping-list}" th:classappend="${#httpServletRequest.requestURI.startsWith('/shopping-list') ? 'active' : ''}">Shopping List</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container main-content">
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+        
+        <th:block th:include=":: #content">
+            <!-- Content will be inserted here -->
+        </th:block>
+    </main>
+
+    <footer class="footer">
+        <div class="container text-center">
+            <p>&copy; 2025 Meal Planner. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
